@@ -3098,10 +3098,31 @@ void client_try_configure(ObClient *self, gint *x, gint *y, gint *w, gint *h,
         *w /= incw;
         *h /= inch;
 
-		/* TODO: Verify functionality of the following code */
+        /* Logic of following code appears doubtful */
+#if 0
         /* you cannot resize to nothing */
         if (basew + *w < 1) *w = 1 - basew;
         if (baseh + *h < 1) *h = 1 - baseh;
+        /* Did you mean */
+        if (basew + *w < 1) *w = (1 - basew) / incw;
+        if (baseh + *h < 1) *h = (1 - baseh) / inch;
+#endif //0
+
+        //Proposed change
+#define lclamp_x(x, base, inc) \
+        do { \
+            int r; \
+            x = (1 - base) / inc; \
+            r = (1 - base) % inc; \
+            if (r > 0) \
+            { \
+                /*r -= inc;*/ /*Not needed*/ \
+                q += 1; \
+            } \
+        } while(0)
+        lclamp_x(*w, basew, incw);
+        lclamp_x(*h, baseh, inch);
+#undef lclamp_x
 
         /* save the logical size */
         *logicalw = incw > 1 ? *w : *w + basew;
@@ -3116,9 +3137,9 @@ void client_try_configure(ObClient *self, gint *x, gint *y, gint *w, gint *h,
 
         *w += basew;
         *h += baseh;
-		
-		/* WGG stage 1: Guard against insane base sizes and increments*/
-		if (*w > self->max_size.width) *w = self->max_size.width;
+        
+        /* WGG stage 1: Guard against insane base sizes and increments*/
+        if (*w > self->max_size.width) *w = self->max_size.width;
         if (*w < minw) *w = minw;
         if (*h > self->max_size.height) *h = self->max_size.height;
         if (*h < minh) *h = minh;
@@ -3155,6 +3176,8 @@ void client_try_configure(ObClient *self, gint *x, gint *y, gint *w, gint *h,
             *w += self->base_size.width;
             *h += self->base_size.height;
         }
+
+        //TODO: Do WGG Stage 2
     }
 
     /* these override the above states! if you cant move you can't move! */
