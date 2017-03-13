@@ -56,6 +56,8 @@
 #include <glib.h>
 #include <X11/Xutil.h>
 
+#include <math.h> /*for sqrt*/
+
 /*! The event mask to grab on client windows */
 #define CLIENT_EVENTMASK (PropertyChangeMask | StructureNotifyMask | \
                           ColormapChangeMask)
@@ -3104,20 +3106,23 @@ void client_try_configure(ObClient *self, gint *x, gint *y, gint *w, gint *h,
         if (basew + *w < 1) *w = 1 - basew;
         if (baseh + *h < 1) *h = 1 - baseh;
         /* Did you mean */
-        if (basew + *w < 1) *w = (1 - basew) / incw;
-        if (baseh + *h < 1) *h = (1 - baseh) / inch;
+        if (basew + incw * (*w) < 1) *w = (1 - basew) / incw;
+        if (baseh + inch * (*h) < 1) *h = (1 - baseh) / inch;
 #endif //0
 
         //Proposed change
 #define lclamp_x(x, base, inc) \
         do { \
-            int r; \
-            x = (1 - base) / inc; \
-            r = (1 - base) % inc; \
-            if (r > 0) \
+            if (base + inc * (x) < 1) \
             { \
-                /*r -= inc;*/ /*Not needed*/ \
-                q += 1; \
+                int r; \
+                x = (1 - base) / inc; \
+                r = (1 - base) % inc; \
+                if (r > 0) \
+                { \
+                    /*r -= inc;*/ /*Not needed*/ \
+                    x += 1; \
+                } \
             } \
         } while(0)
         lclamp_x(*w, basew, incw);
@@ -3176,8 +3181,6 @@ void client_try_configure(ObClient *self, gint *x, gint *y, gint *w, gint *h,
             *w += self->base_size.width;
             *h += self->base_size.height;
         }
-
-        //TODO: Do WGG Stage 2
     }
 
     /* these override the above states! if you cant move you can't move! */
@@ -3190,6 +3193,29 @@ void client_try_configure(ObClient *self, gint *x, gint *y, gint *w, gint *h,
             *w = self->area.width;
             *h = self->area.height;
         }
+    }
+    
+    //WGG Stage 2: Hard limits to window size
+    //TODO: Dont hardcode these values,
+    //      but rather add a setting, preferably in obconf.
+    //      But for now this will help protect the system from freaking out.
+    //      Also these limits sort-of depend on available memory, right?
+    //TODO: Print a log entry when these hard limits are exceeded. 
+#define WGG_MAX_W 8000
+#define WGG_MAX_H 8000
+#define WGG_MAX_A 40000000
+    if (*w > WGG_MAX_W)
+    {
+        *w = WGG_MAX_W;
+    }
+    if (*h > WGG_MAX_H)
+    {
+        *h = WGG_MAX_H;
+    }
+    if ((*w) * (*h) > WGG_MAX_A)
+    {
+        *h = sqrt((WGG_MAX_A / (*w)) * (*h));
+        *w = WGG_MAX_A / (*h);
     }
 
     g_assert(*w > 0);
