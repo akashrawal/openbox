@@ -3113,13 +3113,11 @@ void client_try_configure(ObClient *self, gint *x, gint *y, gint *w, gint *h,
         //Proposed change
 #define lclamp_x(x, base, inc) \
         do { \
-            if (base + inc * (x) < 1) \
-            { \
+            if (base + inc * (x) < 1) { \
                 int r; \
                 x = (1 - base) / inc; \
                 r = (1 - base) % inc; \
-                if (r > 0) \
-                { \
+                if (r > 0) { \
                     /*r -= inc;*/ /*Not needed*/ \
                     x += 1; \
                 } \
@@ -3204,16 +3202,13 @@ void client_try_configure(ObClient *self, gint *x, gint *y, gint *w, gint *h,
 #define WGG_MAX_W 8000
 #define WGG_MAX_H 8000
 #define WGG_MAX_A 40000000
-    if (*w > WGG_MAX_W)
-    {
+    if (*w > WGG_MAX_W) {
         *w = WGG_MAX_W;
     }
-    if (*h > WGG_MAX_H)
-    {
+    if (*h > WGG_MAX_H) {
         *h = WGG_MAX_H;
     }
-    if ((*w) * (*h) > WGG_MAX_A)
-    {
+    if ((*w) * (*h) > WGG_MAX_A) {
         *h = sqrt((WGG_MAX_A / (*w)) * (*h));
         *w = WGG_MAX_A / (*h);
     }
